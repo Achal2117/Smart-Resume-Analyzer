@@ -60,7 +60,7 @@ def Generate_QA(resume_info, job_role, job_description=None):
         print(prompt)
         print(f"Length of prompt is: {len(prompt)}")
         response = client.chat.completions.create(
-            model="inclusionai/ring-2.6-1t:free",
+            model="baidu/cobuddy:free",
             messages=[
                 {
                     "role":"user",
@@ -72,6 +72,9 @@ def Generate_QA(resume_info, job_role, job_description=None):
             max_tokens=2500
         )
         print(response)
+        print("\n")
+        print(response.choices[0].message.content)
+        print("\n")
         return response.choices[0].message.content
     except Exception as e:
         print(e)

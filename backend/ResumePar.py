@@ -49,6 +49,8 @@ def extract_name(text):
         return person_entities[0]
     return None
 
+
+
 escaped_skills = [re.escape(skill) for skill in skills_db]
 SKILLS_REGEX = re.compile(r"\b(" + "|".join(escaped_skills) + r")\b", re.IGNORECASE)
 
@@ -137,7 +139,7 @@ def analyse_sections(text):
         print(prompt)
         print(f"Length of prompt is: {len(prompt)}")
         response = client.chat.completions.create(
-            model="inclusionai/ring-2.6-1t:free",
+            model="baidu/cobuddy:free",
             messages=[
                 {
                     "role":"user",
@@ -149,7 +151,17 @@ def analyse_sections(text):
             max_tokens=2000
         )
         print(response)
-        return response.choices[0].message.content
+
+
+        content = response.choices[0].message.content.strip()
+
+        match = re.search(r"\{.*\}", content, re.DOTALL)
+
+        if match:
+            parsed_data = json.loads(match.group())
+            return parsed_data
+        else:
+            raise
     except Exception as e:
         print("\n ---- Exception Occured ----\n")
         print(e)

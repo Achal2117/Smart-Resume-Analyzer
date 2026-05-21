@@ -56,26 +56,21 @@ async def analyse_resume(
     Upload a resume file (.pdf or .docx), provide a target job role,
     and get back parsed info + skill match + interview Q&A.
     """
-    # Validate file type
     if not file.filename.lower().endswith((".pdf", ".docx")):
         raise HTTPException(status_code=400, detail="Only .pdf and .docx files are supported.")
 
-    # Validate job role
     if job_role.lower() not in job_roles_skills:
         raise HTTPException(status_code=400, detail=f"Unsupported job role: '{job_role}'")
 
-    # Save uploaded file to a temp location
     suffix = os.path.splitext(file.filename)[1]
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     try:
         shutil.copyfileobj(file.file, tmp)
         tmp.close()
 
-        # 1. Extract text
         text = extract_text_from_file(tmp.name)
         text = text[:12000]
 
-        # 2. Parse resume sections via LLM
         try:
             raw_sections = analyse_sections(text)
         except Exception as llm_err:
@@ -101,19 +96,18 @@ async def analyse_resume(
             "github": extract_github(text),
         }
         for key, value in section_info.items():
+
             if key not in ("error", "raw_output"):
                 parsed[key] = value
 
-        # 3. Skill analysis
+
         found_skills, missing_skills = analyse_skills(text, job_role.lower())
         total_required = len(found_skills) + len(missing_skills)
         match_percentage = round((len(found_skills) / total_required * 100), 1) if total_required > 0 else 0
 
-        # Keep all_skills as all skills found in resume, skills becomes the matched ones
         parsed["all_skills"] = parsed["skills"]
         parsed["skills"] = found_skills
 
-        # 4. Generate interview Q&A via Gemini
         main_sec = {
             "skills": parsed.get("skills", [])[:20],
             "education": parsed.get("education", [])[:2],
